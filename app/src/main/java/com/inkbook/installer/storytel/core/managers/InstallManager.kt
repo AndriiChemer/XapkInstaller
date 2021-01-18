@@ -13,6 +13,11 @@ class InstallManager {
         private val TAG = InstallManager::class.java.simpleName
     }
 
+    fun uninstallApk(packageName: String): Boolean {
+        val installCommand = "pm uninstall -k $packageName\n"
+        return shellExecutor(installCommand)
+    }
+
     fun installApkList(file: File): InstallResultModel {
         val files = file.listFiles() ?: throw InstallException("App doesn't have any apk files!")
 
@@ -21,7 +26,8 @@ class InstallManager {
         val installApksResults = ArrayList<Boolean>()
 
         apkList.forEach {
-            val installResult = adbInstallApk(it)
+            val installCommand = "pm install -r ${it.absolutePath}\n"
+            val installResult = shellExecutor(installCommand)
             Log.d(TAG, "${it.name} is ${if (installResult) "" else "not"} installed")
             installApksResults.add(installResult)
         }
@@ -51,29 +57,25 @@ class InstallManager {
         return gson.fromJson(json.toString(), ApkModel::class.java)
     }
 
-    private fun adbInstallApk(file: File): Boolean {
-        return if (file.exists()) {
-            var os: DataOutputStream? = null
-            try {
-                val process = Runtime.getRuntime().exec("su")
-                os = DataOutputStream(process.outputStream)
-                os.writeBytes("yitaoSu\n")
-                os.writeBytes("exec\n")
-                os.writeBytes("pm install -r ${file.absolutePath}\n")
-                os.writeBytes("exit\n")
-                os.flush()
+    private fun shellExecutor(installCommand: String): Boolean {
+        var os: DataOutputStream? = null
+        try {
+            val process = Runtime.getRuntime().exec("su")
+            os = DataOutputStream(process.outputStream)
+            os.writeBytes("yitaoSu\n")
+            os.writeBytes("exec\n")
+            os.writeBytes(installCommand)
+            os.writeBytes("exit\n")
+            os.flush()
 
-                val result = process.waitFor()
+            val result = process.waitFor()
 
-                result == 0
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
-            } finally {
-                os?.close()
-            }
-        } else {
-            false
+            return result == 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        } finally {
+            os?.close()
         }
     }
 }

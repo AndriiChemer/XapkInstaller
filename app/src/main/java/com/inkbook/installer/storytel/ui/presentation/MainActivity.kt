@@ -12,28 +12,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.inkbook.installer.storytel.R
-import kotlinx.android.synthetic.main.activity_main.*
 import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModel()
+    private val message = "Installation of Storytel will take a few steps.\tPlease install all components which will appear during installation process."
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val isPermissionGranted = requestPermissions(this)
+        showInstallingDialogDialog()
 
-        startButton.setOnClickListener {
-            if (isPermissionGranted) {
-                viewModel.onViewCreated()
-            }
-        }
-
-        installButton.setOnClickListener {
-
+        if (!isPermissionGranted) {
+            //TODO show dialog
         }
 
         observeData()
@@ -43,8 +38,12 @@ class MainActivity : AppCompatActivity() {
     private fun observeData() {
         viewModel.data.observe(this) {
             startApp(it.packageName)
-            //TODO remove this app
+            removeSelf()
         }
+    }
+
+    private fun removeSelf() {
+        viewModel.uninstallSelf(packageName)
     }
 
     private fun observeError() {
@@ -99,14 +98,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //TODO
+    private fun showInstallingDialogDialog() {
+        val builder = AlertDialog.Builder(this) //, R.style.ArtaTechTheme_Dialog
+        builder.setTitle("Installing")
+        builder.setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton(
+                android.R.string.ok
+            ) { dialog, id ->
+                viewModel.unzipXapk()
+            }
+            .setNegativeButton(
+                resources.getString(android.R.string.cancel)
+            ) { dialog, which ->
+                dialog.dismiss()
+                finish()
+            }
+        val alert = builder.create()
+        alert.show()
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
     ) {
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-            grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-            viewModel.onViewCreated()
+        if (grantResults[0] != PackageManager.PERMISSION_GRANTED &&
+            grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+            //TODO show dialog
         }
     }
 

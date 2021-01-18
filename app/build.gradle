@@ -17,9 +17,18 @@ android {
     }
 
     buildTypes {
+        def XAPK_FILE_NAME = "Storytel_v6.10.6"
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("String", "XAPK_FILE_NAME", "\"$XAPK_FILE_NAME\"")
+        }
+
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("String", "XAPK_FILE_NAME", "\"$XAPK_FILE_NAME\"")
         }
     }
 }
