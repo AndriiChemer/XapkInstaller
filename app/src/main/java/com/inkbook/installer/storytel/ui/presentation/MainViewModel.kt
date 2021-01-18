@@ -15,14 +15,13 @@ class MainViewModel(private val unzipXapkUseCase: UnzipXapkUseCase,
                     private val uninstallUseCase: UninstallUseCase
 ): ViewModel() {
 
-    val uninstallResult = SingleLiveEvent<Boolean>()
     val installingProgress = MutableLiveData<Boolean>()
     val data = MutableLiveData<InstallResultModel>()
     val error = SingleLiveEvent<Throwable>()
 
     fun uninstallSelf(packageName: String) {
         uninstallUseCase(packageName, viewModelScope) { result ->
-            result.onSuccess { uninstallResult.value = it }
+            result.onSuccess {  }
             result.onFailure { error.value = it }
         }
     }

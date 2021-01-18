@@ -3,11 +3,16 @@ package com.inkbook.installer.storytel.core.managers
 import android.util.Log
 import com.google.gson.Gson
 import com.inkbook.installer.storytel.core.exceptions.InstallException
+import com.inkbook.installer.storytel.core.extentions.deleteExt
+import com.inkbook.installer.storytel.core.extentions.isApk
+import com.inkbook.installer.storytel.core.extentions.isCompatible
+import com.inkbook.installer.storytel.core.extentions.isJson
+import com.inkbook.installer.storytel.core.utils.ShellExecutor
 import com.inkbook.installer.storytel.models.ApkModel
 import com.inkbook.installer.storytel.models.InstallResultModel
 import java.io.*
 
-class InstallManager {
+class InstallManager(private val shellExecutor: ShellExecutor) {
 
     companion object {
         private val TAG = InstallManager::class.java.simpleName
@@ -15,26 +20,25 @@ class InstallManager {
 
     fun uninstallApk(packageName: String): Boolean {
         val installCommand = "pm uninstall -k $packageName\n"
-        return shellExecutor(installCommand)
+        return shellExecutor.execute(installCommand)
     }
 
     fun installApkList(file: File): InstallResultModel {
         val files = file.listFiles() ?: throw InstallException("App doesn't have any apk files!")
 
-        val packageName = getPackageNameFromManifest(files)
-        val apkList = files.filter { it.isFile && it.isApk() }
+        val app = getPackageNameFromManifest(files)
+        val apks = files.filter { it.isFile && it.isApk() && it.isCompatible() }
         val installApksResults = ArrayList<Boolean>()
 
-        apkList.forEach {
-            val installCommand = "pm install -r ${it.absolutePath}\n"
-            val installResult = shellExecutor(installCommand)
-            Log.d(TAG, "${it.name} is ${if (installResult) "" else "not"} installed")
-            installApksResults.add(installResult)
-        }
+        val installMainApkResult = shellExecutor.installMultipleApk(apks)
+        installApksResults.add(installMainApkResult)
 
         file.deleteExt()
-        Log.d(TAG, "${packageName.name} is ${ if (installApksResults.contains(true)) "" else "not"} installed")
-        return InstallResultModel(packageName.package_name, installApksResults.contains(true))
+        Log.d(
+            TAG,
+            "${app.name} is ${if (installApksResults.contains(true)) "" else "not"} installed"
+        )
+        return InstallResultModel(app.package_name, installApksResults.contains(true))
     }
 
     private fun getPackageNameFromManifest(files: Array<File>): ApkModel {
@@ -57,47 +61,5 @@ class InstallManager {
         return gson.fromJson(json.toString(), ApkModel::class.java)
     }
 
-    private fun shellExecutor(installCommand: String): Boolean {
-        var os: DataOutputStream? = null
-        try {
-            val process = Runtime.getRuntime().exec("su")
-            os = DataOutputStream(process.outputStream)
-            os.writeBytes("yitaoSu\n")
-            os.writeBytes("exec\n")
-            os.writeBytes(installCommand)
-            os.writeBytes("exit\n")
-            os.flush()
 
-            val result = process.waitFor()
-
-            return result == 0
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-        } finally {
-            os?.close()
-        }
-    }
-}
-
-fun File.isApk(): Boolean {
-    return extension.toLowerCase() == "apk"
-}
-
-fun File.isJson(): Boolean {
-    return extension.toLowerCase() == "json"
-}
-
-fun File.deleteExt(): Boolean {
-    if (this.exists()) {
-        val files = listFiles() ?: return true
-        for (i in files.indices) {
-            if (files[i].isDirectory) {
-                files[i].deleteExt()
-            } else {
-                files[i].delete()
-            }
-        }
-    }
-    return delete()
 }

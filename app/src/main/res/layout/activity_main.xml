@@ -11,6 +11,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Installing..."
+        android:visibility="invisible"
+        tools:visibility="visible"
         android:textSize="26sp"
         android:layout_marginBottom="25dp"
         app:layout_constraintEnd_toEndOf="parent"

@@ -2,6 +2,7 @@ package com.inkbook.installer.storytel.app.di
 
 import com.inkbook.installer.storytel.core.managers.InstallManager
 import com.inkbook.installer.storytel.core.managers.UnzipManager
+import com.inkbook.installer.storytel.core.utils.ShellExecutor
 import com.inkbook.installer.storytel.ui.usecase.InstallUseCase
 import com.inkbook.installer.storytel.ui.usecase.UnzipXapkUseCase
 import com.inkbook.installer.storytel.ui.presentation.MainViewModel
@@ -11,7 +12,8 @@ import org.koin.android.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
-    factory { InstallManager() }
+    factory { ShellExecutor() }
+    factory { InstallManager(get()) }
     factory { UnzipManager(androidContext().assets) }
 }
 

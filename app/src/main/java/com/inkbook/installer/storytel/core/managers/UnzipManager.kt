@@ -68,10 +68,6 @@ class UnzipManager(private val assetManager: AssetManager) {
         if (!outputMainFolder.exists()) {
             outputMainFolder.mkdirs()
         }
-        //TODO check if all files is necessary
-//        if (!entry.name.contains(languageManual)) {
-//            return
-//        }
 
         if (entry.isDirectory) {
             createDir(File(outputDir, entry.name))
